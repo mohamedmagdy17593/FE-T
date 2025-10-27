@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useRef } from "react";
 import {
   DndContext,
   DragOverlay,
@@ -54,11 +54,6 @@ function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const { addComponent, getComponentAt } = useGridStore();
-
-  useEffect(() => {
-    // Apply dark mode
-    document.documentElement.classList.add("dark");
-  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {

@@ -78,7 +78,7 @@ export function ComponentLibrary() {
   ];
 
   return (
-    <div className="w-64 bg-muted border-r border-border p-4">
+    <div className="w-64 bg-background border-r border-border p-4">
       <h2 className="text-lg font-bold mb-4 text-foreground">Components</h2>
       <div className="space-y-3">
         {components.map((component) => (
