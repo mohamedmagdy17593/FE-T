@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useDroppable, useDndContext } from "@dnd-kit/core";
 import { useGridStore } from "../store/gridStore";
 import type { Component, ComponentType } from "@/lib/types";
@@ -53,6 +53,13 @@ export function GridCanvas({
     moveComponent,
     generateGrid,
   } = useGridStore();
+
+  const draggingComponentType = useMemo(
+    () =>
+      Array.from(components.values()).find((c) => c.id === draggingComponentId)
+        ?.type as ComponentType,
+    [components, draggingComponentId]
+  );
 
   // Initial grid generation on mount
   useEffect(() => {
@@ -282,42 +289,6 @@ export function GridCanvas({
       }
     });
 
-    // Draw preview cell
-    if (previewCell) {
-      const x = previewCell.x * CELL_SIZE;
-      const y = previewCell.y * CELL_SIZE;
-
-      let previewColor: string;
-
-      // Determine preview color based on drag source
-      if (draggingComponentId) {
-        // Dragging existing component
-        const component = Array.from(components.values()).find(
-          (c) => c.id === draggingComponentId
-        );
-        previewColor = component
-          ? COMPONENT_COLORS[component.type]
-          : "oklch(0.5 0 0)";
-      } else if (active?.data.current?.type) {
-        // Dragging from library
-        previewColor =
-          COMPONENT_COLORS[active.data.current.type as ComponentType];
-      } else {
-        previewColor = "oklch(0.5 0 0)";
-      }
-
-      // Semi-transparent fill
-      ctx.fillStyle = previewColor + "40"; // 40 = ~25% opacity in hex
-      ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
-
-      // Dashed border
-      ctx.strokeStyle = previewColor;
-      ctx.lineWidth = 2 / zoom;
-      ctx.setLineDash([5 / zoom, 5 / zoom]);
-      ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
-      ctx.setLineDash([]);
-    }
-
     ctx.restore();
   }, [
     gridSize,
@@ -376,7 +347,7 @@ export function GridCanvas({
         })}
 
         {/* Preview icon for drop location */}
-        {previewCell && (
+        {previewCell && draggingComponentType && (
           <div
             className="absolute flex items-center justify-center text-white"
             style={{
@@ -386,18 +357,10 @@ export function GridCanvas({
               height: `${CELL_SIZE * zoom}px`,
               fontSize: `${CELL_SIZE * zoom * 0.6}px`,
               opacity: 0.4,
-              backgroundColor: "black",
+              backgroundColor: COMPONENT_COLORS[draggingComponentType],
             }}
           >
-            {draggingComponentId
-              ? getIconForComponentType(
-                  Array.from(components.values()).find(
-                    (c) => c.id === draggingComponentId
-                  )?.type as ComponentType
-                )
-              : active?.data.current?.type
-              ? getIconForComponentType(active.data.current.type)
-              : null}
+            {getIconForComponentType(draggingComponentType)}
           </div>
         )}
       </div>
