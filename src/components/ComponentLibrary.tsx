@@ -1,7 +1,8 @@
-import { useDraggable } from '@dnd-kit/core';
-import type { ComponentType } from '../store/gridStore';
-import { FaLightbulb, FaWind, FaFire } from 'react-icons/fa';
-import { TbAirConditioning } from 'react-icons/tb';
+import { useDraggable } from "@dnd-kit/core";
+import type { ComponentType } from "../store/gridStore";
+import { COMPONENT_COLORS } from "../store/gridStore";
+import { FaLightbulb, FaWind, FaFire } from "react-icons/fa";
+import { TbAirConditioning } from "react-icons/tb";
 
 interface DraggableComponentProps {
   type: ComponentType;
@@ -51,28 +52,28 @@ function DraggableComponent({
 export function ComponentLibrary() {
   const components: DraggableComponentProps[] = [
     {
-      type: 'light',
-      label: 'Light',
+      type: "light",
+      label: "Light",
       icon: <FaLightbulb />,
-      color: 'oklch(0.7686 0.1647 70.0804)', // chart-4 (amber)
+      color: COMPONENT_COLORS["light"],
     },
     {
-      type: 'air_supply',
-      label: 'Air Supply',
+      type: "air_supply",
+      label: "Air Supply",
       icon: <TbAirConditioning />,
-      color: 'oklch(0.6231 0.1880 259.8145)', // chart-2 (cyan)
+      color: COMPONENT_COLORS["air_supply"],
     },
     {
-      type: 'air_return',
-      label: 'Air Return',
+      type: "air_return",
+      label: "Air Return",
       icon: <FaWind />,
-      color: 'oklch(0.6056 0.2189 292.7172)', // chart-3 (pink)
+      color: COMPONENT_COLORS["air_return"],
     },
     {
-      type: 'smoke_detector',
-      label: 'Smoke Detector',
+      type: "smoke_detector",
+      label: "Smoke Detector",
       icon: <FaFire />,
-      color: 'oklch(0.5523 0.1927 32.7272)', // destructive (red)
+      color: COMPONENT_COLORS["smoke_detector"],
     },
   ];
 
@@ -93,4 +94,3 @@ export function ComponentLibrary() {
     </div>
   );
 }
-

@@ -1,50 +1,56 @@
-import { useEffect, useRef, useState } from 'react';
-import { useDroppable, useDndContext } from '@dnd-kit/core';
-import { useGridStore } from '../store/gridStore';
-import type { Component, ComponentType } from '../store/gridStore';
-import { FaLightbulb, FaWind, FaFire } from 'react-icons/fa';
-import { TbAirConditioning } from 'react-icons/tb';
-
-const CELL_SIZE = 40; // pixels per 0.6m cell
+import { useEffect, useRef, useState } from "react";
+import { useDroppable, useDndContext } from "@dnd-kit/core";
+import { useGridStore, COMPONENT_COLORS, CELL_SIZE } from "../store/gridStore";
+import type { Component, ComponentType } from "../store/gridStore";
+import { FaLightbulb, FaWind, FaFire } from "react-icons/fa";
+import { TbAirConditioning } from "react-icons/tb";
 
 const getComputedColor = (varName: string): string => {
-  if (typeof window === 'undefined') return '#000';
+  if (typeof window === "undefined") return "#000";
   const style = getComputedStyle(document.documentElement);
-  return style.getPropertyValue(varName).trim();
-};
+  const value = style.getPropertyValue(varName).trim();
 
-const COMPONENT_COLORS: Record<ComponentType, string> = {
-  light: 'oklch(0.7686 0.1647 70.0804)', // chart-4 (amber)
-  air_supply: 'oklch(0.6231 0.1880 259.8145)', // chart-2 (cyan)
-  air_return: 'oklch(0.6056 0.2189 292.7172)', // chart-3 (pink)
-  smoke_detector: 'oklch(0.5523 0.1927 32.7272)', // destructive (red)
-  invalid: 'oklch(0.9461 0 0)', // muted
+  // Convert oklch to rgb for canvas rendering
+  // oklch values come as "oklch(L C H)"
+  if (value.startsWith("oklch")) {
+    return value; // Canvas 2D context supports oklch in modern browsers
+  }
+  return value || "#000";
 };
 
 const getIconForComponentType = (type: ComponentType) => {
   switch (type) {
-    case 'light':
+    case "light":
       return <FaLightbulb />;
-    case 'air_supply':
+    case "air_supply":
       return <TbAirConditioning />;
-    case 'air_return':
+    case "air_return":
       return <FaWind />;
-    case 'smoke_detector':
+    case "smoke_detector":
       return <FaFire />;
     default:
       return null;
   }
 };
 
-export function GridCanvas({ canvasRef }: { canvasRef: React.RefObject<HTMLCanvasElement> }) {
+export function GridCanvas({
+  canvasRef,
+}: {
+  canvasRef: React.RefObject<HTMLCanvasElement | null>;
+}) {
   const localCanvasRef = useRef<HTMLCanvasElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
   const [isPanning, setIsPanning] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [previewCell, setPreviewCell] = useState<{ x: number; y: number } | null>(null);
-  const [draggingComponentId, setDraggingComponentId] = useState<string | null>(null);
+  const [previewCell, setPreviewCell] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
+  const [draggingComponentId, setDraggingComponentId] = useState<string | null>(
+    null,
+  );
 
-  const { setNodeRef } = useDroppable({ id: 'grid-canvas' });
+  const { setNodeRef } = useDroppable({ id: "grid-canvas" });
   const { active } = useDndContext();
 
   const {
@@ -59,6 +65,27 @@ export function GridCanvas({ canvasRef }: { canvasRef: React.RefObject<HTMLCanva
     moveComponent,
   } = useGridStore();
 
+  // Center grid on mount
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) return;
+
+    const centerPan = () => {
+      const gridPixelSize = gridSize * CELL_SIZE;
+      const containerWidth = container.clientWidth;
+      const containerHeight = container.clientHeight;
+
+      const centerX = (containerWidth - gridPixelSize) / 2;
+      const centerY = (containerHeight - gridPixelSize) / 2;
+
+      updatePanZoom({ x: centerX, y: centerY }, 1);
+    };
+
+    // Use a small timeout to ensure container dimensions are ready
+    const timer = setTimeout(centerPan, 0);
+    return () => clearTimeout(timer);
+  }, [gridSize, updatePanZoom]);
+
   // Handle mouse wheel for zoom
   useEffect(() => {
     const canvas = localCanvasRef.current;
@@ -66,13 +93,25 @@ export function GridCanvas({ canvasRef }: { canvasRef: React.RefObject<HTMLCanva
 
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
+
+      const rect = canvas.getBoundingClientRect();
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+
+      const gridCenterX = (centerX - panOffset.x) / (CELL_SIZE * zoom);
+      const gridCenterY = (centerY - panOffset.y) / (CELL_SIZE * zoom);
+
       const delta = e.deltaY > 0 ? 0.9 : 1.1;
       const newZoom = Math.max(0.1, Math.min(5, zoom * delta));
-      updatePanZoom(panOffset, newZoom);
+
+      const newPanX = centerX - gridCenterX * CELL_SIZE * newZoom;
+      const newPanY = centerY - gridCenterY * CELL_SIZE * newZoom;
+
+      updatePanZoom({ x: newPanX, y: newPanY }, newZoom);
     };
 
-    canvas.addEventListener('wheel', handleWheel, { passive: false });
-    return () => canvas.removeEventListener('wheel', handleWheel);
+    canvas.addEventListener("wheel", handleWheel, { passive: false });
+    return () => canvas.removeEventListener("wheel", handleWheel);
   }, [zoom, panOffset, updatePanZoom]);
 
   // Handle mouse down for panning
@@ -90,7 +129,7 @@ export function GridCanvas({ canvasRef }: { canvasRef: React.RefObject<HTMLCanva
 
     // Check if clicking on a component
     const component = Array.from(components.values()).find(
-      (c) => c.x === gridX && c.y === gridY && c.type !== 'invalid'
+      (c) => c.x === gridX && c.y === gridY && c.type !== "invalid",
     );
 
     if (component) {
@@ -164,7 +203,7 @@ export function GridCanvas({ canvasRef }: { canvasRef: React.RefObject<HTMLCanva
     // Complete component drag
     if (draggingComponentId && previewCell) {
       const targetComponent = Array.from(components.values()).find(
-        (c) => c.x === previewCell.x && c.y === previewCell.y
+        (c) => c.x === previewCell.x && c.y === previewCell.y,
       );
 
       // Only move if target cell is empty (not occupied or invalid)
@@ -182,7 +221,7 @@ export function GridCanvas({ canvasRef }: { canvasRef: React.RefObject<HTMLCanva
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (
-        (e.key === 'Delete' || e.key === 'Backspace') &&
+        (e.key === "Delete" || e.key === "Backspace") &&
         selectedComponentId
       ) {
         e.preventDefault();
@@ -190,8 +229,8 @@ export function GridCanvas({ canvasRef }: { canvasRef: React.RefObject<HTMLCanva
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [selectedComponentId, removeComponent]);
 
   // Render canvas
@@ -200,7 +239,7 @@ export function GridCanvas({ canvasRef }: { canvasRef: React.RefObject<HTMLCanva
     const container = containerRef.current;
     if (!canvas || !container) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     // Set canvas size
@@ -208,9 +247,7 @@ export function GridCanvas({ canvasRef }: { canvasRef: React.RefObject<HTMLCanva
     canvas.height = container.clientHeight;
 
     // Clear canvas - use background color
-    const bgColor = getComputedStyle(document.documentElement)
-      .getPropertyValue('--background')
-      .trim() || 'oklch(0.9911 0 0)';
+    const bgColor = getComputedColor("--background");
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -219,9 +256,7 @@ export function GridCanvas({ canvasRef }: { canvasRef: React.RefObject<HTMLCanva
     ctx.scale(zoom, zoom);
 
     // Draw grid lines - use border color
-    const gridColor = getComputedStyle(document.documentElement)
-      .getPropertyValue('--border')
-      .trim() || 'oklch(0.9037 0 0)';
+    const gridColor = getComputedColor("--border");
     ctx.strokeStyle = gridColor;
     ctx.lineWidth = 1 / zoom;
 
@@ -245,7 +280,7 @@ export function GridCanvas({ canvasRef }: { canvasRef: React.RefObject<HTMLCanva
       const y = component.y * CELL_SIZE;
       const isSelected = component.id === selectedComponentId;
 
-      if (component.type !== 'invalid') {
+      if (component.type !== "invalid") {
         // Draw colored background
         ctx.fillStyle = COMPONENT_COLORS[component.type];
         ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
@@ -256,10 +291,8 @@ export function GridCanvas({ canvasRef }: { canvasRef: React.RefObject<HTMLCanva
       }
 
       // Highlight selected component
-      if (isSelected && component.type !== 'invalid') {
-        const selectedColor = getComputedStyle(document.documentElement)
-          .getPropertyValue('--primary')
-          .trim() || 'oklch(0.8348 0.1302 160.9080)';
+      if (isSelected && component.type !== "invalid") {
+        const selectedColor = getComputedColor("--primary");
         ctx.strokeStyle = selectedColor;
         ctx.lineWidth = 4 / zoom;
         ctx.strokeRect(x, y, CELL_SIZE, CELL_SIZE);
@@ -277,18 +310,21 @@ export function GridCanvas({ canvasRef }: { canvasRef: React.RefObject<HTMLCanva
       if (draggingComponentId) {
         // Dragging existing component
         const component = Array.from(components.values()).find(
-          (c) => c.id === draggingComponentId
+          (c) => c.id === draggingComponentId,
         );
-        previewColor = component ? COMPONENT_COLORS[component.type] : 'oklch(0.5 0 0)';
+        previewColor = component
+          ? COMPONENT_COLORS[component.type]
+          : "oklch(0.5 0 0)";
       } else if (active?.data.current?.type) {
         // Dragging from library
-        previewColor = COMPONENT_COLORS[active.data.current.type];
+        previewColor =
+          COMPONENT_COLORS[active.data.current.type as ComponentType];
       } else {
-        previewColor = 'oklch(0.5 0 0)';
+        previewColor = "oklch(0.5 0 0)";
       }
 
       // Semi-transparent fill
-      ctx.fillStyle = previewColor + '40'; // 40 = ~25% opacity in hex
+      ctx.fillStyle = previewColor + "40"; // 40 = ~25% opacity in hex
       ctx.fillRect(x, y, CELL_SIZE, CELL_SIZE);
 
       // Dashed border
@@ -300,7 +336,16 @@ export function GridCanvas({ canvasRef }: { canvasRef: React.RefObject<HTMLCanva
     }
 
     ctx.restore();
-  }, [gridSize, components, panOffset, zoom, selectedComponentId, previewCell, active, draggingComponentId]);
+  }, [
+    gridSize,
+    components,
+    panOffset,
+    zoom,
+    selectedComponentId,
+    previewCell,
+    active,
+    draggingComponentId,
+  ]);
 
   return (
     <div
@@ -310,7 +355,7 @@ export function GridCanvas({ canvasRef }: { canvasRef: React.RefObject<HTMLCanva
       <canvas
         ref={(node) => {
           localCanvasRef.current = node;
-          if (canvasRef) canvasRef.current = node;
+          if (canvasRef && node) canvasRef.current = node;
           setNodeRef(node);
         }}
         onMouseDown={handleMouseDown}
@@ -323,7 +368,7 @@ export function GridCanvas({ canvasRef }: { canvasRef: React.RefObject<HTMLCanva
       {/* Icon overlay layer */}
       <div className="absolute inset-0 pointer-events-none">
         {Array.from(components.values()).map((component) => {
-          if (component.type === 'invalid') return null;
+          if (component.type === "invalid") return null;
 
           const left = panOffset.x + component.x * CELL_SIZE * zoom;
           const top = panOffset.y + component.y * CELL_SIZE * zoom;
@@ -332,7 +377,7 @@ export function GridCanvas({ canvasRef }: { canvasRef: React.RefObject<HTMLCanva
           return (
             <div
               key={component.id}
-              className="absolute flex items-center justify-center text-white transition-all"
+              className="absolute flex items-center justify-center text-white"
               style={{
                 left: `${left}px`,
                 top: `${top}px`,
@@ -349,4 +394,3 @@ export function GridCanvas({ canvasRef }: { canvasRef: React.RefObject<HTMLCanva
     </div>
   );
 }
-

@@ -1,11 +1,21 @@
-import { create } from 'zustand';
+import { create } from "zustand";
 
 export type ComponentType =
-  | 'light'
-  | 'air_supply'
-  | 'air_return'
-  | 'smoke_detector'
-  | 'invalid';
+  | "light"
+  | "air_supply"
+  | "air_return"
+  | "smoke_detector"
+  | "invalid";
+
+export const COMPONENT_COLORS: Record<ComponentType, string> = {
+  light: "oklch(0.7686 0.1647 70.0804)",
+  air_supply: "oklch(0.6231 0.1880 259.8145)",
+  air_return: "oklch(0.6056 0.2189 292.7172)",
+  smoke_detector: "oklch(0.5523 0.1927 32.7272)",
+  invalid: "oklch(0.9461 0 0)",
+};
+
+export const CELL_SIZE = 40; // pixels per 0.6m cell
 
 export interface Component {
   id: string;
@@ -48,7 +58,8 @@ export const useGridStore = create<GridState>((set, get) => ({
 
   setGridSize: (size: number) => set({ gridSize: size }),
 
-  setInvalidCount: (count: number) => set({ invalidCount: count }),
+  setInvalidCount: (count: number) =>
+    set({ invalidCount: Math.min(count, get().gridSize * get().gridSize) }),
 
   generateGrid: () => {
     const { gridSize, invalidCount } = get();
@@ -64,7 +75,7 @@ export const useGridStore = create<GridState>((set, get) => ({
         positions.add(key);
         newComponents.set(key, {
           id: `invalid-${x}-${y}`,
-          type: 'invalid',
+          type: "invalid",
           x,
           y,
         });
@@ -132,7 +143,7 @@ export const useGridStore = create<GridState>((set, get) => ({
     const components = new Map(get().components);
     // Keep only invalid cells
     for (const [key, component] of Array.from(components.entries())) {
-      if (component.type !== 'invalid') {
+      if (component.type !== "invalid") {
         components.delete(key);
       }
     }
@@ -147,4 +158,3 @@ export const useGridStore = create<GridState>((set, get) => ({
     set({ panOffset: { x: 0, y: 0 }, zoom: 1 });
   },
 }));
-

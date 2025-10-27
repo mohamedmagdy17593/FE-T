@@ -1,27 +1,86 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef } from "react";
 import {
   DndContext,
   DragOverlay,
   useSensor,
   useSensors,
   PointerSensor,
-} from '@dnd-kit/core';
-import type { DragEndEvent } from '@dnd-kit/core';
-import { GridCanvas } from './components/GridCanvas';
-import { ComponentLibrary } from './components/ComponentLibrary';
-import { GridConfig } from './components/GridConfig';
-import { useGridStore } from './store/gridStore';
+  useDndContext,
+} from "@dnd-kit/core";
+import type { DragEndEvent } from "@dnd-kit/core";
+import { GridCanvas } from "./components/GridCanvas";
+import { ComponentLibrary } from "./components/ComponentLibrary";
+import { GridConfig } from "./components/GridConfig";
+import {
+  useGridStore,
+  COMPONENT_COLORS,
+  CELL_SIZE,
+  type ComponentType,
+} from "./store/gridStore";
+import { FaLightbulb, FaWind, FaFire } from "react-icons/fa";
+import { TbAirConditioning } from "react-icons/tb";
+
+const getIconForComponentType = (type: string) => {
+  switch (type) {
+    case "light":
+      return <FaLightbulb />;
+    case "air_supply":
+      return <TbAirConditioning />;
+    case "air_return":
+      return <FaWind />;
+    case "smoke_detector":
+      return <FaFire />;
+    default:
+      return null;
+  }
+};
+
+function DragOverlayContent() {
+  const { active } = useDndContext();
+
+  if (!active || !active.data.current?.type) {
+    return null;
+  }
+
+  const type = active.data.current.type as ComponentType;
+  const color = COMPONENT_COLORS[type] || "#000";
+
+  return (
+    <div
+      style={{
+        width: `${CELL_SIZE}px`,
+        height: `${CELL_SIZE}px`,
+        backgroundColor: color,
+        borderRadius: "2px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        color: "white",
+        fontSize: "24px",
+        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
+        transform: "translate(-50%, -50%)",
+      }}
+    >
+      {getIconForComponentType(type)}
+    </div>
+  );
+}
 
 function App() {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const { generateGrid, addComponent, getComponentAt } = useGridStore();
+
+  useEffect(() => {
+    // Apply dark mode
+    document.documentElement.classList.add("dark");
+  }, []);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
         distance: 8,
       },
-    })
+    }),
   );
 
   useEffect(() => {
@@ -31,7 +90,7 @@ function App() {
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
 
-    if (!over || over.id !== 'grid-canvas') return;
+    if (!over || over.id !== "grid-canvas") return;
 
     const componentType = active.data.current?.type;
     if (!componentType) return;
@@ -51,8 +110,8 @@ function App() {
     const canvasX = dropX - rect.left;
     const canvasY = dropY - rect.top;
 
-    const gridX = Math.floor((canvasX - panOffset.x) / (40 * zoom));
-    const gridY = Math.floor((canvasY - panOffset.y) / (40 * zoom));
+    const gridX = Math.floor((canvasX - panOffset.x) / (CELL_SIZE * zoom));
+    const gridY = Math.floor((canvasY - panOffset.y) / (CELL_SIZE * zoom));
 
     // Validate position
     const { gridSize } = store;
@@ -85,7 +144,9 @@ function App() {
           <GridCanvas canvasRef={canvasRef} />
         </div>
       </div>
-      <DragOverlay />
+      <DragOverlay>
+        <DragOverlayContent />
+      </DragOverlay>
     </DndContext>
   );
 }
