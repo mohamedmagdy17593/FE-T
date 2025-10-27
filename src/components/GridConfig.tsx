@@ -3,8 +3,7 @@ import { useGridStore } from "../store/gridStore";
 import { Button } from "./ui/button";
 import { Input } from "./ui/input";
 import { FaRedo, FaTrash, FaSearchPlus } from "react-icons/fa";
-
-const MAX_GRID_SIZE = 200;
+import { MAX_GRID_SIZE } from "@/lib/constants";
 
 export function GridConfig({
   containerRef,

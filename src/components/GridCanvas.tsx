@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { useDroppable, useDndContext } from "@dnd-kit/core";
-import { useGridStore, COMPONENT_COLORS, CELL_SIZE } from "../store/gridStore";
-import type { Component, ComponentType } from "../store/gridStore";
+import { useGridStore } from "../store/gridStore";
+import type { Component, ComponentType } from "@/lib/types";
+import { COMPONENT_COLORS, CELL_SIZE } from "@/lib/constants";
 import { getIconForComponentType } from "../lib/componentUtils";
 
 const getComputedColor = (varName: string): string => {

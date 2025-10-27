@@ -1,6 +1,6 @@
 import { FaLightbulb, FaWind, FaFire } from "react-icons/fa";
 import { TbAirConditioning } from "react-icons/tb";
-import type { ComponentType } from "@/store/gridStore";
+import type { ComponentType } from "@/lib/types";
 
 export const getIconForComponentType = (type: ComponentType) => {
   switch (type) {

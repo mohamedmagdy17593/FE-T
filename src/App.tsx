@@ -11,12 +11,9 @@ import type { DragEndEvent } from "@dnd-kit/core";
 import { GridCanvas } from "./components/GridCanvas";
 import { ComponentLibrary } from "./components/ComponentLibrary";
 import { GridConfig } from "./components/GridConfig";
-import {
-  useGridStore,
-  COMPONENT_COLORS,
-  CELL_SIZE,
-  type ComponentType,
-} from "./store/gridStore";
+import { useGridStore } from "./store/gridStore";
+import type { ComponentType } from "@/lib/types";
+import { COMPONENT_COLORS, CELL_SIZE } from "@/lib/constants";
 import { getIconForComponentType } from "./lib/componentUtils";
 
 function DragOverlayContent() {

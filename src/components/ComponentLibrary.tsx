@@ -1,8 +1,7 @@
 import { useDraggable } from "@dnd-kit/core";
-import type { ComponentType } from "../store/gridStore";
-import { COMPONENT_COLORS } from "../store/gridStore";
-import { FaLightbulb, FaWind, FaFire } from "react-icons/fa";
-import { TbAirConditioning } from "react-icons/tb";
+import type { ComponentType } from "@/lib/types";
+import { COMPONENT_COLORS } from "@/lib/constants";
+import { getIconForComponentType } from "@/lib/componentUtils";
 
 interface DraggableComponentProps {
   type: ComponentType;
@@ -54,25 +53,25 @@ export function ComponentLibrary() {
     {
       type: "light",
       label: "Light",
-      icon: <FaLightbulb />,
+      icon: getIconForComponentType("light"),
       color: COMPONENT_COLORS["light"],
     },
     {
       type: "air_supply",
       label: "Air Supply",
-      icon: <TbAirConditioning />,
+      icon: getIconForComponentType("air_supply"),
       color: COMPONENT_COLORS["air_supply"],
     },
     {
       type: "air_return",
       label: "Air Return",
-      icon: <FaWind />,
+      icon: getIconForComponentType("air_return"),
       color: COMPONENT_COLORS["air_return"],
     },
     {
       type: "smoke_detector",
       label: "Smoke Detector",
-      icon: <FaFire />,
+      icon: getIconForComponentType("smoke_detector"),
       color: COMPONENT_COLORS["smoke_detector"],
     },
   ];
