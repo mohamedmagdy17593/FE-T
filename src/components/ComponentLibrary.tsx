@@ -1,7 +1,12 @@
 import { useDraggable } from "@dnd-kit/core";
 import type { ComponentType } from "@/lib/types";
-import { COMPONENT_COLORS } from "@/lib/constants";
+import { COMPONENT_COLORS, CELL_SIZE } from "@/lib/constants";
 import { getIconForComponentType } from "@/lib/componentUtils";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface DraggableComponentProps {
   type: ComponentType;
@@ -19,32 +24,38 @@ function DraggableComponent({
   const { attributes, listeners, setNodeRef, transform, isDragging } =
     useDraggable({
       id: `component-${type}`,
-      data: { type },
+      data: { type, label },
     });
 
   const style = transform
     ? {
         transform: `translate3d(${transform.x}px, ${transform.y}px, 0)`,
-        opacity: isDragging ? 0.5 : 1,
+        opacity: isDragging ? 0 : 1,
       }
     : undefined;
 
   return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      {...listeners}
-      {...attributes}
-      className="flex items-center gap-3 p-3 bg-card border-2 border-border rounded-lg cursor-grab active:cursor-grabbing hover:border-border/60 transition-colors"
-    >
-      <div
-        className="w-10 h-10 rounded flex items-center justify-center text-white text-xl"
-        style={{ backgroundColor: color }}
-      >
-        {icon}
-      </div>
-      <span className="font-medium text-sm">{label}</span>
-    </div>
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <div
+          ref={setNodeRef}
+          style={{
+            ...style,
+            backgroundColor: color,
+            width: `${CELL_SIZE}px`,
+            height: `${CELL_SIZE}px`,
+          }}
+          {...listeners}
+          {...attributes}
+          className="flex items-center justify-center text-white text-2xl rounded cursor-grab active:cursor-grabbing hover:opacity-80 transition-opacity"
+        >
+          {icon}
+        </div>
+      </TooltipTrigger>
+      <TooltipContent side="right">
+        <p>{label}</p>
+      </TooltipContent>
+    </Tooltip>
   );
 }
 
@@ -77,14 +88,14 @@ export function ComponentLibrary() {
   ];
 
   return (
-    <div className="w-64 bg-background border-r border-border p-4">
+    <div className="w-fit bg-background border-r border-border p-4">
       <h2 className="text-lg font-bold mb-4 text-foreground">Components</h2>
-      <div className="space-y-3">
+      <div className="flex flex-col gap-3">
         {components.map((component) => (
           <DraggableComponent key={component.type} {...component} />
         ))}
       </div>
-      <div className="mt-6 p-3 bg-accent border border-border rounded-lg">
+      <div className="mt-6 p-3 bg-accent border border-border rounded-lg max-w-[200px]">
         <p className="text-xs text-accent-foreground">
           <strong>Tip:</strong> Drag components onto the grid to place them.
           Click to select, press Delete to remove.

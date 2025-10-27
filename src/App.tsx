@@ -24,25 +24,49 @@ function DragOverlayContent() {
   }
 
   const type = active.data.current.type as ComponentType;
+  const label = active.data.current.label as string;
   const color = COMPONENT_COLORS[type] || "#000";
 
   return (
     <div
       style={{
-        width: `${CELL_SIZE}px`,
-        height: `${CELL_SIZE}px`,
-        backgroundColor: color,
-        borderRadius: "2px",
         display: "flex",
+        flexDirection: "column",
         alignItems: "center",
-        justifyContent: "center",
-        color: "white",
-        fontSize: "24px",
-        boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
-        transform: "translate(-50%, -50%)",
+        gap: "8px",
+        transform: `translate(${-CELL_SIZE / 2}px, ${-CELL_SIZE / 2}px)`,
+        pointerEvents: "none",
       }}
     >
-      {getIconForComponentType(type)}
+      <div
+        style={{
+          width: `${CELL_SIZE}px`,
+          height: `${CELL_SIZE}px`,
+          backgroundColor: color,
+          borderRadius: "2px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          color: "white",
+          fontSize: "24px",
+          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.3)",
+        }}
+      >
+        {getIconForComponentType(type)}
+      </div>
+      <div
+        style={{
+          backgroundColor: "hsl(var(--foreground))",
+          color: "hsl(var(--background))",
+          padding: "6px 12px",
+          borderRadius: "6px",
+          fontSize: "12px",
+          whiteSpace: "nowrap",
+          boxShadow: "0 2px 8px rgba(0, 0, 0, 0.2)",
+        }}
+      >
+        {label}
+      </div>
     </div>
   );
 }
