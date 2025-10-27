@@ -36,12 +36,9 @@ export function GridConfig({
       setInvalidCount(invalid);
     }
 
-    // Pass container dimensions for centering
     const container = containerRef.current;
     if (container) {
       generateGrid(container.clientWidth, container.clientHeight);
-    } else {
-      generateGrid();
     }
   };
 
@@ -49,8 +46,6 @@ export function GridConfig({
     const container = containerRef.current;
     if (container) {
       resetZoom(container.clientWidth, container.clientHeight);
-    } else {
-      resetZoom();
     }
   };
 

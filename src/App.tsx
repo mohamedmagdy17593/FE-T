@@ -17,23 +17,7 @@ import {
   CELL_SIZE,
   type ComponentType,
 } from "./store/gridStore";
-import { FaLightbulb, FaWind, FaFire } from "react-icons/fa";
-import { TbAirConditioning } from "react-icons/tb";
-
-const getIconForComponentType = (type: string) => {
-  switch (type) {
-    case "light":
-      return <FaLightbulb />;
-    case "air_supply":
-      return <TbAirConditioning />;
-    case "air_return":
-      return <FaWind />;
-    case "smoke_detector":
-      return <FaFire />;
-    default:
-      return null;
-  }
-};
+import { getIconForComponentType } from "./lib/componentUtils";
 
 function DragOverlayContent() {
   const { active } = useDndContext();
@@ -69,7 +53,7 @@ function DragOverlayContent() {
 function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const { generateGrid, addComponent, getComponentAt } = useGridStore();
+  const { addComponent, getComponentAt } = useGridStore();
 
   useEffect(() => {
     // Apply dark mode
@@ -81,13 +65,8 @@ function App() {
       activationConstraint: {
         distance: 8,
       },
-    }),
+    })
   );
-
-  useEffect(() => {
-    // Initial grid generation - centering will be handled by GridCanvas useEffect
-    generateGrid();
-  }, [generateGrid]);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;

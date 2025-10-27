@@ -35,7 +35,7 @@ interface GridState {
   // Actions
   setGridSize: (size: number) => void;
   setInvalidCount: (count: number) => void;
-  generateGrid: (containerWidth?: number, containerHeight?: number) => void;
+  generateGrid: (containerWidth: number, containerHeight: number) => void;
   addComponent: (component: Component) => void;
   removeComponent: (id: string) => void;
   moveComponent: (id: string, x: number, y: number) => void;
@@ -43,8 +43,7 @@ interface GridState {
   setSelectedComponent: (id: string | null) => void;
   clearComponents: () => void;
   getComponentAt: (x: number, y: number) => Component | undefined;
-  resetZoom: (containerWidth?: number, containerHeight?: number) => void;
-  centerGrid: (containerWidth: number, containerHeight: number) => void;
+  resetZoom: (containerWidth: number, containerHeight: number) => void;
 }
 
 const positionKey = (x: number, y: number) => `${x},${y}`;
@@ -85,8 +84,8 @@ export const useGridStore = create<GridState>((set, get) => ({
   setInvalidCount: (count: number) =>
     set({ invalidCount: Math.min(count, get().gridSize * get().gridSize) }),
 
-  generateGrid: (containerWidth?: number, containerHeight?: number) => {
-    const { gridSize, invalidCount, centerGrid } = get();
+  generateGrid: (containerWidth: number, containerHeight: number) => {
+    const { gridSize, invalidCount, resetZoom } = get();
     const newComponents = new Map<string, Component>();
 
     // Generate unique random positions
@@ -111,13 +110,8 @@ export const useGridStore = create<GridState>((set, get) => ({
       selectedComponentId: null,
     });
 
-    // Center the grid if container dimensions provided
-    if (containerWidth !== undefined && containerHeight !== undefined) {
-      centerGrid(containerWidth, containerHeight);
-    } else {
-      // Reset to default if no dimensions
-      set({ panOffset: { x: 0, y: 0 }, zoom: 1 });
-    }
+    // Center the grid
+    resetZoom(containerWidth, containerHeight);
   },
 
   addComponent: (component: Component) => {
@@ -184,17 +178,7 @@ export const useGridStore = create<GridState>((set, get) => ({
     return get().components.get(positionKey(x, y));
   },
 
-  resetZoom: (containerWidth?: number, containerHeight?: number) => {
-    const { centerGrid } = get();
-
-    if (containerWidth !== undefined && containerHeight !== undefined) {
-      centerGrid(containerWidth, containerHeight);
-    } else {
-      set({ panOffset: { x: 0, y: 0 }, zoom: 1 });
-    }
-  },
-
-  centerGrid: (containerWidth: number, containerHeight: number) => {
+  resetZoom: (containerWidth: number, containerHeight: number) => {
     const { gridSize } = get();
     const gridPixelSize = gridSize * CELL_SIZE;
 

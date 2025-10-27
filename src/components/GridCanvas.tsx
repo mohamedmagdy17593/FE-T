@@ -2,8 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useDroppable, useDndContext } from "@dnd-kit/core";
 import { useGridStore, COMPONENT_COLORS, CELL_SIZE } from "../store/gridStore";
 import type { Component, ComponentType } from "../store/gridStore";
-import { FaLightbulb, FaWind, FaFire } from "react-icons/fa";
-import { TbAirConditioning } from "react-icons/tb";
+import { getIconForComponentType } from "../lib/componentUtils";
 
 const getComputedColor = (varName: string): string => {
   if (typeof window === "undefined") return "#000";
@@ -16,21 +15,6 @@ const getComputedColor = (varName: string): string => {
     return value; // Canvas 2D context supports oklch in modern browsers
   }
   return value || "#000";
-};
-
-const getIconForComponentType = (type: ComponentType) => {
-  switch (type) {
-    case "light":
-      return <FaLightbulb />;
-    case "air_supply":
-      return <TbAirConditioning />;
-    case "air_return":
-      return <FaWind />;
-    case "smoke_detector":
-      return <FaFire />;
-    default:
-      return null;
-  }
 };
 
 export function GridCanvas({
@@ -50,7 +34,7 @@ export function GridCanvas({
     y: number;
   } | null>(null);
   const [draggingComponentId, setDraggingComponentId] = useState<string | null>(
-    null,
+    null
   );
 
   const { setNodeRef } = useDroppable({ id: "grid-canvas" });
@@ -66,24 +50,23 @@ export function GridCanvas({
     setSelectedComponent,
     removeComponent,
     moveComponent,
-    centerGrid,
+    generateGrid,
   } = useGridStore();
 
-  // Center grid on mount and when grid size changes
+  // Initial grid generation on mount
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    const doCentering = () => {
+    const timer = setTimeout(() => {
       const containerWidth = container.clientWidth;
       const containerHeight = container.clientHeight;
-      centerGrid(containerWidth, containerHeight);
-    };
+      generateGrid(containerWidth, containerHeight);
+    }, 0);
 
-    // Use a small timeout to ensure container dimensions are ready
-    const timer = setTimeout(doCentering, 0);
     return () => clearTimeout(timer);
-  }, [gridSize, centerGrid, containerRef]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Handle mouse wheel for zoom
   useEffect(() => {
@@ -128,7 +111,7 @@ export function GridCanvas({
 
     // Check if clicking on a component
     const component = Array.from(components.values()).find(
-      (c) => c.x === gridX && c.y === gridY && c.type !== "invalid",
+      (c) => c.x === gridX && c.y === gridY && c.type !== "invalid"
     );
 
     if (component) {
@@ -202,7 +185,7 @@ export function GridCanvas({
     // Complete component drag
     if (draggingComponentId && previewCell) {
       const targetComponent = Array.from(components.values()).find(
-        (c) => c.x === previewCell.x && c.y === previewCell.y,
+        (c) => c.x === previewCell.x && c.y === previewCell.y
       );
 
       // Only move if target cell is empty (not occupied or invalid)
@@ -309,7 +292,7 @@ export function GridCanvas({
       if (draggingComponentId) {
         // Dragging existing component
         const component = Array.from(components.values()).find(
-          (c) => c.id === draggingComponentId,
+          (c) => c.id === draggingComponentId
         );
         previewColor = component
           ? COMPONENT_COLORS[component.type]
