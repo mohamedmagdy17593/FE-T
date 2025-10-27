@@ -35,7 +35,7 @@ interface GridState {
   // Actions
   setGridSize: (size: number) => void;
   setInvalidCount: (count: number) => void;
-  generateGrid: () => void;
+  generateGrid: (containerWidth?: number, containerHeight?: number) => void;
   addComponent: (component: Component) => void;
   removeComponent: (id: string) => void;
   moveComponent: (id: string, x: number, y: number) => void;
@@ -43,10 +43,34 @@ interface GridState {
   setSelectedComponent: (id: string | null) => void;
   clearComponents: () => void;
   getComponentAt: (x: number, y: number) => Component | undefined;
-  resetZoom: () => void;
+  resetZoom: (containerWidth?: number, containerHeight?: number) => void;
+  centerGrid: (containerWidth: number, containerHeight: number) => void;
 }
 
 const positionKey = (x: number, y: number) => `${x},${y}`;
+
+// Generate unique random positions using Fisher-Yates shuffle
+const generateUniqueRandomPositions = (
+  gridSize: number,
+  count: number
+): Array<{ x: number; y: number }> => {
+  // Create array of all possible positions
+  const allPositions: Array<{ x: number; y: number }> = [];
+  for (let x = 0; x < gridSize; x++) {
+    for (let y = 0; y < gridSize; y++) {
+      allPositions.push({ x, y });
+    }
+  }
+
+  // Fisher-Yates shuffle
+  for (let i = allPositions.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [allPositions[i], allPositions[j]] = [allPositions[j], allPositions[i]];
+  }
+
+  // Take first 'count' positions
+  return allPositions.slice(0, count);
+};
 
 export const useGridStore = create<GridState>((set, get) => ({
   gridSize: 20,
@@ -61,33 +85,39 @@ export const useGridStore = create<GridState>((set, get) => ({
   setInvalidCount: (count: number) =>
     set({ invalidCount: Math.min(count, get().gridSize * get().gridSize) }),
 
-  generateGrid: () => {
-    const { gridSize, invalidCount } = get();
+  generateGrid: (containerWidth?: number, containerHeight?: number) => {
+    const { gridSize, invalidCount, centerGrid } = get();
     const newComponents = new Map<string, Component>();
 
-    // Generate random invalid positions
-    const positions = new Set<string>();
-    while (positions.size < Math.min(invalidCount, gridSize * gridSize)) {
-      const x = Math.floor(Math.random() * gridSize);
-      const y = Math.floor(Math.random() * gridSize);
+    // Generate unique random positions
+    const randomPositions = generateUniqueRandomPositions(
+      gridSize,
+      Math.min(invalidCount, gridSize * gridSize)
+    );
+
+    // Add invalid components at those positions
+    randomPositions.forEach(({ x, y }) => {
       const key = positionKey(x, y);
-      if (!positions.has(key)) {
-        positions.add(key);
-        newComponents.set(key, {
-          id: `invalid-${x}-${y}`,
-          type: "invalid",
-          x,
-          y,
-        });
-      }
-    }
+      newComponents.set(key, {
+        id: `invalid-${x}-${y}`,
+        type: "invalid",
+        x,
+        y,
+      });
+    });
 
     set({
       components: newComponents,
       selectedComponentId: null,
-      panOffset: { x: 0, y: 0 },
-      zoom: 1,
     });
+
+    // Center the grid if container dimensions provided
+    if (containerWidth !== undefined && containerHeight !== undefined) {
+      centerGrid(containerWidth, containerHeight);
+    } else {
+      // Reset to default if no dimensions
+      set({ panOffset: { x: 0, y: 0 }, zoom: 1 });
+    }
   },
 
   addComponent: (component: Component) => {
@@ -154,7 +184,23 @@ export const useGridStore = create<GridState>((set, get) => ({
     return get().components.get(positionKey(x, y));
   },
 
-  resetZoom: () => {
-    set({ panOffset: { x: 0, y: 0 }, zoom: 1 });
+  resetZoom: (containerWidth?: number, containerHeight?: number) => {
+    const { centerGrid } = get();
+
+    if (containerWidth !== undefined && containerHeight !== undefined) {
+      centerGrid(containerWidth, containerHeight);
+    } else {
+      set({ panOffset: { x: 0, y: 0 }, zoom: 1 });
+    }
+  },
+
+  centerGrid: (containerWidth: number, containerHeight: number) => {
+    const { gridSize } = get();
+    const gridPixelSize = gridSize * CELL_SIZE;
+
+    const centerX = (containerWidth - gridPixelSize) / 2;
+    const centerY = (containerHeight - gridPixelSize) / 2;
+
+    set({ panOffset: { x: centerX, y: centerY }, zoom: 1 });
   },
 }));

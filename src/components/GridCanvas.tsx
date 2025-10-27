@@ -35,11 +35,14 @@ const getIconForComponentType = (type: ComponentType) => {
 
 export function GridCanvas({
   canvasRef,
+  containerRef: externalContainerRef,
 }: {
   canvasRef: React.RefObject<HTMLCanvasElement | null>;
+  containerRef?: React.RefObject<HTMLDivElement | null>;
 }) {
   const localCanvasRef = useRef<HTMLCanvasElement>(null);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const internalContainerRef = useRef<HTMLDivElement>(null);
+  const containerRef = externalContainerRef || internalContainerRef;
   const [isPanning, setIsPanning] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
   const [previewCell, setPreviewCell] = useState<{
@@ -63,28 +66,24 @@ export function GridCanvas({
     setSelectedComponent,
     removeComponent,
     moveComponent,
+    centerGrid,
   } = useGridStore();
 
-  // Center grid on mount
+  // Center grid on mount and when grid size changes
   useEffect(() => {
     const container = containerRef.current;
     if (!container) return;
 
-    const centerPan = () => {
-      const gridPixelSize = gridSize * CELL_SIZE;
+    const doCentering = () => {
       const containerWidth = container.clientWidth;
       const containerHeight = container.clientHeight;
-
-      const centerX = (containerWidth - gridPixelSize) / 2;
-      const centerY = (containerHeight - gridPixelSize) / 2;
-
-      updatePanZoom({ x: centerX, y: centerY }, 1);
+      centerGrid(containerWidth, containerHeight);
     };
 
     // Use a small timeout to ensure container dimensions are ready
-    const timer = setTimeout(centerPan, 0);
+    const timer = setTimeout(doCentering, 0);
     return () => clearTimeout(timer);
-  }, [gridSize, updatePanZoom]);
+  }, [gridSize, centerGrid, containerRef]);
 
   // Handle mouse wheel for zoom
   useEffect(() => {
@@ -345,6 +344,7 @@ export function GridCanvas({
     previewCell,
     active,
     draggingComponentId,
+    containerRef,
   ]);
 
   return (

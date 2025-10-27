@@ -68,6 +68,7 @@ function DragOverlayContent() {
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const { generateGrid, addComponent, getComponentAt } = useGridStore();
 
   useEffect(() => {
@@ -84,6 +85,7 @@ function App() {
   );
 
   useEffect(() => {
+    // Initial grid generation - centering will be handled by GridCanvas useEffect
     generateGrid();
   }, [generateGrid]);
 
@@ -138,10 +140,10 @@ function App() {
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       <div className="h-screen flex flex-col">
-        <GridConfig />
+        <GridConfig containerRef={containerRef} />
         <div className="flex-1 flex overflow-hidden">
           <ComponentLibrary />
-          <GridCanvas canvasRef={canvasRef} />
+          <GridCanvas canvasRef={canvasRef} containerRef={containerRef} />
         </div>
       </div>
       <DragOverlay>
