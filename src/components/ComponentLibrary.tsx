@@ -89,17 +89,10 @@ export function ComponentLibrary() {
 
   return (
     <div className="w-fit bg-background border-r border-border p-4">
-      <h2 className="text-lg font-bold mb-4 text-foreground">Components</h2>
       <div className="flex flex-col gap-3">
         {components.map((component) => (
           <DraggableComponent key={component.type} {...component} />
         ))}
-      </div>
-      <div className="mt-6 p-3 bg-accent border border-border rounded-lg max-w-[200px]">
-        <p className="text-xs text-accent-foreground">
-          <strong>Tip:</strong> Drag components onto the grid to place them.
-          Click to select, press Delete to remove.
-        </p>
       </div>
     </div>
   );
