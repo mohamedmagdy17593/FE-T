@@ -374,6 +374,32 @@ export function GridCanvas({
             </div>
           );
         })}
+
+        {/* Preview icon for drop location */}
+        {previewCell && (
+          <div
+            className="absolute flex items-center justify-center text-white"
+            style={{
+              left: `${panOffset.x + previewCell.x * CELL_SIZE * zoom}px`,
+              top: `${panOffset.y + previewCell.y * CELL_SIZE * zoom}px`,
+              width: `${CELL_SIZE * zoom}px`,
+              height: `${CELL_SIZE * zoom}px`,
+              fontSize: `${CELL_SIZE * zoom * 0.6}px`,
+              opacity: 0.4,
+              backgroundColor: "black",
+            }}
+          >
+            {draggingComponentId
+              ? getIconForComponentType(
+                  Array.from(components.values()).find(
+                    (c) => c.id === draggingComponentId
+                  )?.type as ComponentType
+                )
+              : active?.data.current?.type
+              ? getIconForComponentType(active.data.current.type)
+              : null}
+          </div>
+        )}
       </div>
     </div>
   );
