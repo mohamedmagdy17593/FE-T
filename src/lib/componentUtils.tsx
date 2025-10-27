@@ -2,7 +2,7 @@ import { FaLightbulb, FaWind, FaFire } from "react-icons/fa";
 import { TbAirConditioning } from "react-icons/tb";
 import type { ComponentType } from "@/store/gridStore";
 
-export const getIconForComponentType = (type: ComponentType | string) => {
+export const getIconForComponentType = (type: ComponentType) => {
   switch (type) {
     case "light":
       return <FaLightbulb />;
