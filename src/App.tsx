@@ -25,7 +25,7 @@ function DragOverlayContent() {
 
   const type = active.data.current.type as ComponentType;
   const label = active.data.current.label as string;
-  const color = COMPONENT_COLORS[type] || "#000";
+  const color = COMPONENT_COLORS[type];
 
   return (
     <div
@@ -34,7 +34,6 @@ function DragOverlayContent() {
         flexDirection: "column",
         alignItems: "center",
         gap: "8px",
-        transform: `translate(${-CELL_SIZE / 2}px, ${-CELL_SIZE / 2}px)`,
         pointerEvents: "none",
       }}
     >
