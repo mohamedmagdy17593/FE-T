@@ -73,7 +73,7 @@ function DragOverlayContent() {
 function App() {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const { addComponent, getComponentAt } = useGridStore();
+  const { addComponent, getComponentAt, clearDragPreview } = useGridStore();
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -91,29 +91,13 @@ function App() {
     const componentType = active.data.current?.type;
     if (!componentType) return;
 
-    // Get drop position relative to canvas
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const rect = canvas.getBoundingClientRect();
+    // Use previewCell calculated by GridCanvas tracking
     const store = useGridStore.getState();
-    const { panOffset, zoom } = store;
-
-    // Calculate grid position from drop coordinates
-    const dropX = (active.rect.current.initial?.left ?? 0) + event.delta.x;
-    const dropY = (active.rect.current.initial?.top ?? 0) + event.delta.y;
-
-    const canvasX = dropX - rect.left;
-    const canvasY = dropY - rect.top;
-
-    const gridX = Math.floor((canvasX - panOffset.x) / (CELL_SIZE * zoom));
-    const gridY = Math.floor((canvasY - panOffset.y) / (CELL_SIZE * zoom));
-
-    // Validate position
-    const { gridSize } = store;
-    if (gridX < 0 || gridX >= gridSize || gridY < 0 || gridY >= gridSize) {
+    const { previewCell, gridSize } = store;
+    if (!previewCell) return;
+    const { x: gridX, y: gridY } = previewCell;
+    if (gridX < 0 || gridX >= gridSize || gridY < 0 || gridY >= gridSize)
       return;
-    }
 
     // Check if cell is occupied
     const existingComponent = getComponentAt(gridX, gridY);
@@ -129,6 +113,9 @@ function App() {
       x: gridX,
       y: gridY,
     });
+
+    // Clear preview after successful drop
+    clearDragPreview();
   };
 
   return (
