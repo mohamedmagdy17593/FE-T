@@ -18,7 +18,7 @@ function Input({ className, type, size = "default", ...props }: InputProps) {
         size === "sm"
           ? "h-8 px-2.5 py-1 text-sm file:inline-flex file:h-6 file:text-xs"
           : "h-9 px-3 py-1 text-base md:text-sm file:inline-flex file:h-7 file:text-sm",
-        className,
+        className
       )}
       {...props}
     />
