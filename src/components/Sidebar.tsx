@@ -59,7 +59,7 @@ function DraggableComponent({
   );
 }
 
-export function ComponentLibrary() {
+export function Sidebar() {
   const components: DraggableComponentProps[] = [
     {
       type: "light",

@@ -12,7 +12,7 @@ const getComputedColor = (varName: string): string => {
   return value;
 };
 
-export function GridCanvas({
+export function Canvas({
   canvasRef,
   containerRef: externalContainerRef,
 }: {

@@ -5,7 +5,7 @@ import { Input } from "./ui/input";
 import { FaRedo, FaTrash, FaSearchPlus } from "react-icons/fa";
 import { MAX_GRID_SIZE } from "@/lib/constants";
 
-export function GridConfig({
+export function Nav({
   containerRef,
 }: {
   containerRef: React.RefObject<HTMLDivElement | null>;
@@ -19,6 +19,8 @@ export function GridConfig({
     generateGrid,
     clearComponents,
     resetZoom,
+    selectedComponentId,
+    removeComponent,
   } = useGridStore();
 
   const [inputSize, setInputSize] = useState(gridSize.toString());
@@ -102,6 +104,16 @@ export function GridConfig({
           <FaTrash className="w-3 h-3" />
           Clear All
         </Button>
+
+        {selectedComponentId && (
+          <Button
+            onClick={() => removeComponent(selectedComponentId)}
+            variant="destructive"
+            size="sm"
+          >
+            <FaTrash className="w-3 h-3" />
+          </Button>
+        )}
       </div>
     </div>
   );

@@ -8,9 +8,9 @@ import {
   useDndContext,
 } from "@dnd-kit/core";
 import type { DragEndEvent } from "@dnd-kit/core";
-import { GridCanvas } from "./components/GridCanvas";
-import { ComponentLibrary } from "./components/ComponentLibrary";
-import { GridConfig } from "./components/GridConfig";
+import { Canvas } from "./components/Canvas";
+import { Sidebar } from "./components/Sidebar";
+import { Nav } from "./components/Nav";
 import { useGridStore } from "./store/gridStore";
 import type { ComponentType } from "@/lib/types";
 import { COMPONENT_COLORS, CELL_SIZE } from "@/lib/constants";
@@ -121,10 +121,10 @@ function App() {
   return (
     <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
       <div className="h-screen flex flex-col">
-        <GridConfig containerRef={containerRef} />
+        <Nav containerRef={containerRef} />
         <div className="flex-1 flex overflow-hidden">
-          <ComponentLibrary />
-          <GridCanvas canvasRef={canvasRef} containerRef={containerRef} />
+          <Sidebar />
+          <Canvas canvasRef={canvasRef} containerRef={containerRef} />
         </div>
       </div>
       <DragOverlay>
