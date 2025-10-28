@@ -343,14 +343,14 @@ export function GridCanvas({
         {/* Preview icon for drop location */}
         {previewCell && draggingComponentType && (
           <div
-            className="absolute flex items-center justify-center text-white"
+            className="absolute flex items-center justify-center text-white pointer-events-none"
             style={{
               left: `${panOffset.x + previewCell.x * CELL_SIZE * zoom}px`,
               top: `${panOffset.y + previewCell.y * CELL_SIZE * zoom}px`,
               width: `${CELL_SIZE * zoom}px`,
               height: `${CELL_SIZE * zoom}px`,
               fontSize: `${CELL_SIZE * zoom * 0.6}px`,
-              opacity: 0.4,
+              opacity: 0.7,
               backgroundColor: COMPONENT_COLORS[draggingComponentType],
             }}
           >
