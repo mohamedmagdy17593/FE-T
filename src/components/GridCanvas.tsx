@@ -9,13 +9,7 @@ const getComputedColor = (varName: string): string => {
   if (typeof window === "undefined") return "#000";
   const style = getComputedStyle(document.documentElement);
   const value = style.getPropertyValue(varName).trim();
-
-  // Convert oklch to rgb for canvas rendering
-  // oklch values come as "oklch(L C H)"
-  if (value.startsWith("oklch")) {
-    return value; // Canvas 2D context supports oklch in modern browsers
-  }
-  return value || "#000";
+  return value;
 };
 
 export function GridCanvas({
