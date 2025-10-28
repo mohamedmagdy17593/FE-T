@@ -1,3 +1,8 @@
+## 🖥️ Demo
+
+View the live demo or try it out here:
+[https://fe-t.vercel.app/](https://fe-t.vercel.app/)
+
 # HVAC Component Grid Builder
 
 A modern React-based drag-and-drop application for designing HVAC (Heating, Ventilation, and Air Conditioning) systems. Users can drag building components like lights, air supply units, air return units, and smoke detectors onto a grid canvas to create system layouts.
