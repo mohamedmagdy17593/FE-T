@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDroppable, useDndContext } from "@dnd-kit/core";
 import { useGridStore } from "../store/gridStore";
 import type { Component, ComponentType } from "@/lib/types";
@@ -24,13 +24,6 @@ export function GridCanvas({
   const containerRef = externalContainerRef || internalContainerRef;
   const [isPanning, setIsPanning] = useState(false);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-  const [previewCell, setPreviewCell] = useState<{
-    x: number;
-    y: number;
-  } | null>(null);
-  const [draggingComponentId, setDraggingComponentId] = useState<string | null>(
-    null
-  );
 
   const { setNodeRef } = useDroppable({ id: "grid-canvas" });
   const { active } = useDndContext();
@@ -41,19 +34,19 @@ export function GridCanvas({
     panOffset,
     zoom,
     selectedComponentId,
+    draggingComponentId,
+    draggedComponentType,
+    previewCell,
     updatePanZoom,
     setSelectedComponent,
     removeComponent,
-    moveComponent,
     generateGrid,
+    startDraggingComponent,
+    updateDragPreview,
+    clearDragPreview,
+    setDraggedComponentType,
+    endCanvasDrag,
   } = useGridStore();
-
-  const draggingComponentType = useMemo(
-    () =>
-      Array.from(components.values()).find((c) => c.id === draggingComponentId)
-        ?.type as ComponentType,
-    [components, draggingComponentId]
-  );
 
   // Initial grid generation on mount
   useEffect(() => {
@@ -98,10 +91,13 @@ export function GridCanvas({
     return () => canvas.removeEventListener("wheel", handleWheel);
   }, [zoom, panOffset, updatePanZoom]);
 
-  // Handle mouse down for panning
-  const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
+  // Handle pointer down for panning/dragging; capture pointer to continue receiving moves
+  const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
     const canvas = localCanvasRef.current;
     if (!canvas) return;
+
+    // Capture pointer so we continue to receive pointermove events during drag/pan
+    (e.currentTarget as HTMLCanvasElement).setPointerCapture(e.pointerId);
 
     const rect = canvas.getBoundingClientRect();
     const x = e.clientX - rect.left;
@@ -117,89 +113,87 @@ export function GridCanvas({
     );
 
     if (component) {
-      setSelectedComponent(component.id);
       // Start dragging the component
-      setDraggingComponentId(component.id);
-      setDragStart({ x: gridX, y: gridY });
+      startDraggingComponent(component.id, gridX, gridY);
     } else {
       setSelectedComponent(null);
-      setDraggingComponentId(null);
       // Start panning
       setIsPanning(true);
       setDragStart({ x: e.clientX - panOffset.x, y: e.clientY - panOffset.y });
     }
   };
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    // Handle dragging existing component on grid
+  // (moved pointer move logic into global handler below)
+
+  const handlePointerUp = () => {
     if (draggingComponentId) {
+      endCanvasDrag();
+    }
+    setIsPanning(false);
+  };
+
+  // Global pointermove to ensure preview updates even when overlays or dnd overlay intercept events
+  useEffect(() => {
+    const handleGlobalPointerMove = (e: PointerEvent) => {
       const canvas = localCanvasRef.current;
       if (!canvas) return;
-
       const rect = canvas.getBoundingClientRect();
+      // Pan regardless of being inside the canvas bounds
+      if (isPanning) {
+        const newX = e.clientX - dragStart.x;
+        const newY = e.clientY - dragStart.y;
+        updatePanZoom({ x: newX, y: newY }, zoom);
+      }
+      const inside =
+        e.clientX >= rect.left &&
+        e.clientX <= rect.right &&
+        e.clientY >= rect.top &&
+        e.clientY <= rect.bottom;
+
+      if (!inside) {
+        if (!draggingComponentId && !isPanning) {
+          setDraggedComponentType(null);
+          clearDragPreview();
+        }
+        return;
+      }
+
       const x = e.clientX - rect.left;
       const y = e.clientY - rect.top;
-
       const gridX = Math.floor((x - panOffset.x) / (CELL_SIZE * zoom));
       const gridY = Math.floor((y - panOffset.y) / (CELL_SIZE * zoom));
 
-      // Validate position
-      if (gridX >= 0 && gridX < gridSize && gridY >= 0 && gridY < gridSize) {
-        setPreviewCell({ x: gridX, y: gridY });
-      } else {
-        setPreviewCell(null);
+      if (draggingComponentId) {
+        updateDragPreview(gridX, gridY);
+        return;
       }
-      return;
-    }
 
-    if (!isPanning) {
-      // Track preview cell when dragging component from library
       if (active?.data.current?.type) {
-        const canvas = localCanvasRef.current;
-        if (!canvas) return;
-
-        const rect = canvas.getBoundingClientRect();
-        const x = e.clientX - rect.left;
-        const y = e.clientY - rect.top;
-
-        const gridX = Math.floor((x - panOffset.x) / (CELL_SIZE * zoom));
-        const gridY = Math.floor((y - panOffset.y) / (CELL_SIZE * zoom));
-
-        // Validate position
-        if (gridX >= 0 && gridX < gridSize && gridY >= 0 && gridY < gridSize) {
-          setPreviewCell({ x: gridX, y: gridY });
-        } else {
-          setPreviewCell(null);
-        }
-      } else {
-        setPreviewCell(null);
+        setDraggedComponentType(active.data.current.type as ComponentType);
+        updateDragPreview(gridX, gridY);
+      } else if (!isPanning) {
+        setDraggedComponentType(null);
+        clearDragPreview();
       }
-      return;
-    }
+    };
 
-    // Pan the canvas
-    const newX = e.clientX - dragStart.x;
-    const newY = e.clientY - dragStart.y;
-    updatePanZoom({ x: newX, y: newY }, zoom);
-  };
-
-  const handleMouseUp = () => {
-    // Complete component drag
-    if (draggingComponentId && previewCell) {
-      const targetComponent = Array.from(components.values()).find(
-        (c) => c.x === previewCell.x && c.y === previewCell.y
-      );
-
-      // Only move if target cell is empty (not occupied or invalid)
-      if (!targetComponent) {
-        moveComponent(draggingComponentId, previewCell.x, previewCell.y);
-      }
-    }
-
-    setDraggingComponentId(null);
-    setIsPanning(false);
-    setPreviewCell(null);
-  };
+    window.addEventListener("pointermove", handleGlobalPointerMove, {
+      passive: true,
+    });
+    return () =>
+      window.removeEventListener("pointermove", handleGlobalPointerMove);
+  }, [
+    panOffset,
+    zoom,
+    active,
+    draggingComponentId,
+    isPanning,
+    dragStart,
+    updatePanZoom,
+    updateDragPreview,
+    setDraggedComponentType,
+    clearDragPreview,
+  ]);
 
   // Handle keyboard for deletion
   useEffect(() => {
@@ -307,11 +301,10 @@ export function GridCanvas({
           if (canvasRef && node) canvasRef.current = node;
           setNodeRef(node);
         }}
-        onMouseDown={handleMouseDown}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-        className="cursor-move"
+        onPointerDown={handlePointerDown}
+        onPointerUp={handlePointerUp}
+        onPointerLeave={handlePointerUp}
+        className="cursor-move touch-none"
       />
 
       {/* Icon overlay layer */}
@@ -341,9 +334,9 @@ export function GridCanvas({
         })}
 
         {/* Preview icon for drop location */}
-        {previewCell && draggingComponentType && (
+        {previewCell && draggedComponentType && (
           <div
-            className="absolute flex items-center justify-center text-white pointer-events-none"
+            className="absolute flex items-center justify-center text-white"
             style={{
               left: `${panOffset.x + previewCell.x * CELL_SIZE * zoom}px`,
               top: `${panOffset.y + previewCell.y * CELL_SIZE * zoom}px`,
@@ -351,10 +344,10 @@ export function GridCanvas({
               height: `${CELL_SIZE * zoom}px`,
               fontSize: `${CELL_SIZE * zoom * 0.6}px`,
               opacity: 0.7,
-              backgroundColor: COMPONENT_COLORS[draggingComponentType],
+              backgroundColor: COMPONENT_COLORS[draggedComponentType],
             }}
           >
-            {getIconForComponentType(draggingComponentType)}
+            {getIconForComponentType(draggedComponentType)}
           </div>
         )}
       </div>
